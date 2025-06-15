@@ -23,7 +23,11 @@ DB_TYPE=maria или DB_TYPE=postgres
 Собрать образ с марией
 
 ```
-docker build -t 'demo_site_maria' -f Dockerfile_maria .
+docker build --build-arg DB_USER=$(grep DB_USER .env | cut -d '=' -f2) \
+  --build-arg DB_PASS=$(grep DB_PASS .env | cut -d '=' -f2) \
+  --build-arg DB_NAME=$(grep DB_NAME .env | cut -d '=' -f2)  \
+  --build-arg MARIADB_ROOT_PASSWORD=$(grep MARIADB_ROOT_PASSWORD .env | cut -d = '=' -f2) \
+   -t 'demo_site_maria' -f Dockerfile_maria .
 ```
 
 Запустить марию
