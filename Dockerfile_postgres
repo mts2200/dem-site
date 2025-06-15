@@ -1,0 +1,15 @@
+FROM postgres:15-alpine
+
+ARG DB_USER
+ARG DB_PASS
+ARG DB_NAME
+
+# Устанавливаем переменные окружения (можно переопределить при запуске)
+ENV POSTGRES_USER=$DB_USER
+ENV POSTGRES_PASSWORD=$DB_PASS
+ENV POSTGRES_DB=$DB_NAME
+
+EXPOSE 5432
+
+# Используем стандартную команду запуска из базового образа
+CMD ["postgres"]

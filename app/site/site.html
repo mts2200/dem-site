@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0"
+    />
+    <meta http-equiv="X-UA-Compatible" content="ie=edge" />
+    <title>Все студенты</title>
+    <link
+      href="{{ url_for('static', path='/css/bulma.css') }}"
+      rel="stylesheet"
+    />
+  </head>
+  <body>
+    <header class="hero is-primary">
+      <div class="hero-body">
+        <div class="container">
+          <h1 class="title is-1">Очень нужный и важный сайт</h1>
+        </div>
+      </div>
+    </header>
+
+    <main class="container">
+      <div class="table-container">
+        <div class="buttons">
+          <button class="button is-success mt-2" id="addBtn">
+            Добавить запись
+          </button>
+        </div>
+
+        <table
+          class="table is-bordered is-striped is-narrow is-hoverable is-fullwidth"
+        >
+          <thead>
+            <tr>
+              <th>Имя</th>
+              <th>Фамилия</th>
+              <th>Отчество</th>
+              <th>Отдел</th>
+              <th>Id</th>
+              <th>Действия</th>
+            </tr>
+          </thead>
+          <tbody id="tableBody">
+            {% for student in students %}
+            <tr>
+              <td>{{ student.first_name }}</td>
+              <td>{{ student.last_name }}</td>
+              <td>{{ student.second_name }}</td>
+              <td>{{ student.department }}</td>
+              <td>{{ student.id }}</td>
+              <td>
+                <button class="button is-small is-warning edit-btn">
+                  Редактировать
+                </button>
+                <button class="button is-small is-danger delete-btn">
+                  Удалить
+                </button>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </main>
+
+    <!-- Модальное окно для добавления/редактирования -->
+    <div class="modal" id="employeeModal">
+      <div class="modal-background"></div>
+      <div class="modal-card">
+        <header class="modal-card-head">
+          <p class="modal-card-title" id="modalTitle">Добавить сотрудника</p>
+          <button class="delete" aria-label="close" id="closeModal"></button>
+        </header>
+        <section class="modal-card-body">
+          <div class="field">
+            <label class="label">Имя</label>
+            <div class="control">
+              <input
+                class="input"
+                type="text"
+                id="firstName"
+                placeholder="Введите имя"
+                required
+              />
+            </div>
+          </div>
+
+          <div class="field">
+            <label class="label">Фамилия</label>
+            <div class="control">
+              <input
+                class="input"
+                type="text"
+                id="lastName"
+                placeholder="Введите фамилию"
+                required
+              />
+            </div>
+          </div>
+
+          <div class="field">
+            <label class="label">Отчество</label>
+            <div class="control">
+              <input
+                class="input"
+                type="text"
+                id="middleName"
+                placeholder="Введите отчество"
+                required
+              />
+            </div>
+          </div>
+
+          <div class="field">
+            <label class="label">Отдел</label>
+            <div class="control">
+              <input
+                class="input"
+                type="text"
+                id="department"
+                placeholder="Введите отдел"
+                required
+              />
+            </div>
+          </div>
+        </section>
+        <footer class="modal-card-foot">
+          <button class="button is-success" id="saveBtn">Сохранить</button>
+          <button class="button" id="cancelBtn">Отмена</button>
+        </footer>
+      </div>
+    </div>
+
+    <script>
+      // Обработчики событий для модального окна
+      document.addEventListener("DOMContentLoaded", () => {
+        // Элементы модального окна
+        const modal = document.getElementById("employeeModal");
+        const addBtn = document.getElementById("addBtn");
+        const closeModal = document.getElementById("closeModal");
+        const cancelBtn = document.getElementById("cancelBtn");
+        const saveBtn = document.getElementById("saveBtn");
+        const tableBody = document.getElementById("tableBody");
+
+        // Текущая редактируемая строка
+        let currentEditingRow = null;
+
+        // Открыть модальное окно для добавления
+        addBtn.addEventListener("click", () => {
+          document.getElementById("modalTitle").textContent =
+            "Добавить сотрудника";
+          currentEditingRow = null;
+          modal.classList.add("is-active");
+        });
+
+        // Закрыть модальное окно
+        function closeModalWindow() {
+          modal.classList.remove("is-active");
+          // Очистить поля
+          document.getElementById("firstName").value = "";
+          document.getElementById("lastName").value = "";
+          document.getElementById("middleName").value = "";
+          document.getElementById("department").value = "IT";
+          currentEditingRow = null;
+        }
+
+        closeModal.addEventListener("click", closeModalWindow);
+        cancelBtn.addEventListener("click", closeModalWindow);
+
+        // Сохранить данные
+        saveBtn.addEventListener("click", () => {
+          const firstName = document.getElementById("firstName").value.trim();
+          const lastName = document.getElementById("lastName").value.trim();
+          const middleName = document.getElementById("middleName").value.trim();
+          const department = document.getElementById("department").value;
+
+          // Проверка заполнения полей только при добавлении новой записи
+          if (!currentEditingRow && (!firstName || !lastName || !middleName)) {
+            alert("Пожалуйста, заполните все обязательные поля!");
+            return;
+          }
+
+          if (currentEditingRow) {
+            // Редактирование существующей записи
+            const cells = currentEditingRow.cells;
+            if (firstName) cells[0].textContent = firstName;
+            if (lastName) cells[1].textContent = lastName;
+            if (middleName) cells[2].textContent = middleName;
+            cells[3].textContent = department;
+
+            const id = cells[4].textContent;
+            const studentToEdit = {
+              firstName: firstName,
+              lastName: lastName,
+              secondName: middleName,
+              department: department,
+            };
+
+            fetch(`/students/${id}`, {
+              method: "PUT",
+              headers: {
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify(studentToEdit),
+            })
+              .then((response) => {
+                if (!response.ok) throw new Error("Ошибка добавления");
+                return response;
+              })
+              .then(() => {
+                window.location.reload();
+              })
+              .catch((error) => alert(error));
+          } else {
+            const studentToAdd = {
+              firstName: firstName,
+              lastName: lastName,
+              secondName: middleName,
+              department: department,
+            };
+
+            fetch("/students", {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify(studentToAdd),
+            })
+              .then((response) => {
+                if (!response.ok) throw new Error("Ошибка добавления");
+                return response;
+              })
+              .then(() => {
+                window.location.reload();
+              })
+              .catch((error) => alert(error));
+          }
+
+          closeModalWindow();
+        });
+
+        // Обработчики для кнопок редактирования и удаления (делегирование событий)
+        tableBody.addEventListener("click", (e) => {
+          if (e.target.classList.contains("delete-btn")) {
+            // Удаление строки
+            if (confirm("Вы уверены, что хотите удалить эту запись?")) {
+              const cells = e.target.closest("tr").cells;
+
+              console.log(cells);
+
+              const id = cells[4].textContent;
+              console.log(id);
+
+              fetch(`/students/${id}`, {
+                method: "DELETE",
+              })
+                .then((response) => {
+                  console.log(response);
+                  return response.json();
+                })
+                .then((response) => {
+                  console.log(response);
+                  if (response.status === "ok") {
+                    e.target.closest("tr").remove();
+                  }
+                });
+            }
+          } else if (e.target.classList.contains("edit-btn")) {
+            // Редактирование строки
+            currentEditingRow = e.target.closest("tr");
+            const cells = currentEditingRow.cells;
+
+            document.getElementById("modalTitle").textContent =
+              "Редактировать сотрудника";
+            document.getElementById("firstName").value = cells[0].textContent;
+            document.getElementById("lastName").value = cells[1].textContent;
+            document.getElementById("middleName").value = cells[2].textContent;
+            document.getElementById("department").value = cells[3].textContent;
+
+            modal.classList.add("is-active");
+          }
+        });
+      });
+    </script>
+  </body>
+</html>
