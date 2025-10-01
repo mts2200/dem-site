@@ -1,4 +1,5 @@
 from typing import AsyncGenerator
+from sqlalchemy.engine import URL
 from sqlalchemy.orm import DeclarativeBase
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 from app.core.config import settings
@@ -12,18 +13,21 @@ def get_db_connection(
     host=settings.DB_HOST,
     port=settings.DB_PORT,
     database=settings.DB_NAME
-) -> str:
+) -> URL:
     if settings.DB_TYPE == "postgres":
-        return "postgresql+asyncpg://{user}:{password}@{host}:{port}/{database}?async_fallback=True".format(
-            user=user,
+        return URL.create(
+            drivername="postgresql+asyncpg",
+            username=user,
             password=password,
             host=host,
             port=port,
-            database=database
+            database=database,
+            query={"async_fallback": "true"}
         )
     elif settings.DB_TYPE == "maria":
-        return "mysql+asyncmy://{user}:{password}@{host}:{port}/{database}".format(
-            user=user,
+        return URL.create(
+            drivername="mysql+asyncmy",
+            username=user,
             password=password,
             host=host,
             port=port,
